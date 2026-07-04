@@ -1,4 +1,4 @@
-# Seqera — Pipeline Run Status Dashboard
+# Pipeline Run Status Dashboard
 
 A pipeline run status dashboard with progressive disclosure: a health band that answers
 _"is anything wrong?"_ at a glance → a scannable runs list → a **first-class, diagnostic
