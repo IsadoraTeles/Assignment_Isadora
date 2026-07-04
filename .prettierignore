@@ -1,0 +1,11 @@
+dist
+node_modules
+package-lock.json
+*.tsbuildinfo
+
+# Provided/authoritative artifacts — kept verbatim, never reformatted
+src/data/seqera-sample-data.json
+seqera-tokens.css
+src/styles/seqera-tokens.css
+CLAUDE.md
+ai-interaction-principles.md

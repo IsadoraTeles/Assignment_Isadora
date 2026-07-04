@@ -1,0 +1,41 @@
+# ── Build output & dependencies ──────────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+build/
+.vercel/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# ── Secrets / environment ────────────────────────────────────────────────────
+.env
+.env.*
+*.local
+
+# ── OS / editor ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+
+# ── Internal working docs (kept LOCAL — not for the public repo) ──────────────
+# Scored take-home: these are the private working record, not reviewer-facing.
+# (NOTES.md is intentionally NOT ignored — it is published as the decision log.)
+CLAUDE.md
+.claude/
+MEMORY.md
+memory/
+
+# ── Assignment brief (company's document — not ours to republish) ─────────────
+Seqera Design Engineer Take-Home Assignment.pdf

@@ -1,0 +1,76 @@
+/* ============================================================================
+   Seqera Dashboard — Design Tokens
+   Colours sampled from the real Seqera UI (screenshots) and tuned for WCAG AA.
+   Every "-text" value below was contrast-checked against white (≥4.5:1 for
+   small text). Vivid "-solid" values are for fills / icons / large text only
+   (≥3:1 UI-component threshold) — do NOT use them for small text on white.
+   ============================================================================ */
+
+:root {
+  /* ---- Neutrals / surfaces (sampled: #FFFFFF, #FAFAFA, #F7F7F7, #EBEAEE) ---- */
+  --bg:            #ffffff;   /* page background            */
+  --surface:       #fafafa;   /* cards                      */
+  --surface-sunk:  #f7f7f7;   /* wells, table headers       */
+  --border:        #ebeaee;   /* dividers, card edges       */
+
+  /* ---- Ink (sampled purple-black #170F26 / #272338) — 18.5:1 on white ---- */
+  --ink:           #170f26;   /* headings, body text        */
+  --ink-2:         #272338;   /* secondary ink              */
+
+  /* ---- Brand (Seqera green-teal, sampled ~#0EB88A) ---- */
+  --brand-solid:   #0eb88a;   /* logo / graphic only (2.55:1 — NOT small text) */
+  --brand-text:    #087a5c;   /* AA text version (5.32:1)   */
+  --brand-soft:    #e6f7f1;   /* tint background            */
+
+  /* ---- Status: SUCCEEDED (green, hue ~150) ---- */
+  --success-solid: #2e9e5b;   /* fill / icon / large text (3.41:1) */
+  --success-text:  #157347;   /* AA small text (5.87:1)     */
+  --success-soft:  #e9f6ef;   /* badge background           */
+
+  /* ---- Status: FAILED (red/rose, sampled ~#D64560) ---- */
+  --danger-solid:  #d64560;   /* fill / icon / large text (4.30:1) */
+  --danger-text:   #b4284a;   /* AA small text (6.28:1)     */
+  --danger-soft:   #fbeaee;   /* badge background           */
+
+  /* ---- Status: RUNNING / primary action (indigo-blue, sampled ~#3B5AE0) ---- */
+  --primary-solid: #3b5ae0;   /* primary buttons (5.64:1 — also AA text) */
+  --primary-text:  #3450c8;   /* stronger AA text (6.71:1)  */
+  --primary-soft:  #eceffb;   /* tint background            */
+
+  /* ---- Status: CANCELLED / muted (slate) ---- */
+  --muted-solid:   #6b7280;   /* icon / large text (4.83:1) */
+  --muted-text:    #566072;   /* AA small text (6.34:1)     */
+  --muted-soft:    #f1f3f5;   /* badge background           */
+
+  /* ---- AI (violet) — a dedicated role for machine-authored interpretation, kept
+     distinct from the green success/brand family so an AI region on a FAILED run
+     never reads as "success". Contrast checked on --ai-soft: --ai-text 6.48:1
+     (AA small text), --ai-solid 5.19:1 (marker/border; clears the 3:1 UI bar). */
+  --ai-solid:      #7c3aed;   /* sparkle marker / border    */
+  --ai-text:       #6d28d9;   /* AA small text (6.48:1)     */
+  --ai-soft:       #f5f3ff;   /* tint background            */
+
+  /* ---- Focus ring (accessibility — always visible, never removed) ---- */
+  --focus-ring:    #3b5ae0;
+  --focus-ring-offset: #ffffff;
+
+  /* ---- Radius / elevation / rhythm ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-1: 0 1px 2px rgba(23, 15, 38, 0.06), 0 1px 3px rgba(23, 15, 38, 0.08);
+  --shadow-2: 0 4px 12px rgba(23, 15, 38, 0.10);
+
+  /* Spacing scale (4px base) — use consistently for vertical rhythm */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
+
+  /* Type scale (1.25 ratio) */
+  --text-xs: 12px; --text-sm: 13px; --text-base: 15px;
+  --text-lg: 18px; --text-xl: 22px; --text-2xl: 28px; --text-3xl: 34px;
+}
+
+/* Status → role mapping helper (use in components):
+   SUCCEEDED  → --success-*     FAILED → --danger-*
+   RUNNING    → --primary-*     CANCELLED / UNKNOWN → --muted-*
+   Badge pattern = icon + text + colour (never colour alone). */

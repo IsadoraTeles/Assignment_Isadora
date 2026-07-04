@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FailurePanel v3 — illustrated + what-next</title>
+<style>
+  :root{
+    --bg:#fff;--surface:#fafafa;--surface-sunk:#f7f7f7;--border:#ebeaee;
+    --ink:#170f26;--ink-2:#3a3350;--ink-3:#6b6579;
+    --brand:#0eb88a;--brand-text:#087a5c;--brand-soft:#e6f7f1;
+    --success:#2e9e5b;--success-text:#157347;--success-soft:#e9f6ef;
+    --danger:#d64560;--danger-text:#b4284a;--danger-soft:#fbeaee;
+    --primary-text:#3450c8;--muted:#9a94a6;--muted-text:#566072;--muted-soft:#f1f3f5;
+    --focus:#3b5ae0;--r-sm:8px;--r-md:12px;--r-lg:16px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#eceaf2;color:var(--ink);font-family:var(--font);font-size:15px;
+       line-height:1.55;-webkit-font-smoothing:antialiased;padding:32px 16px;
+       display:flex;flex-direction:column;align-items:center;gap:12px}
+  .cap{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+  .cap span{text-transform:none;letter-spacing:0;font-weight:400}
+
+  .panel{width:760px;max-width:100%;min-height:560px;background:var(--bg);
+         border:1px solid var(--border);border-radius:var(--r-lg);
+         box-shadow:0 12px 40px rgba(23,15,38,.14);overflow:hidden;position:relative}
+  .view{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);
+        transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .2s}
+  .view[hidden]{display:none}
+  .view.enter-right{transform:translateX(100%)}.view.enter-left{transform:translateX(-24%);opacity:.4}
+  .view.active{transform:translateX(0);opacity:1}
+  .vhead{display:flex;align-items:center;gap:12px;padding:16px 24px;border-bottom:1px solid var(--border)}
+  .back{display:inline-flex;align-items:center;gap:4px;border:none;background:none;color:var(--primary-text);
+        font:inherit;font-weight:600;font-size:14px;cursor:pointer;padding:6px 8px;margin-left:-8px;border-radius:var(--r-sm)}
+  .back:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .back svg{width:16px;height:16px}
+  .vtitle{font-weight:600}
+  .vbody{padding:24px;overflow:auto;flex:1}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;
+        font-size:12px;font-weight:600;border:1px solid var(--danger);color:var(--danger-text)}
+  .pill svg{width:12px;height:12px}
+  .run-name{font-weight:600;font-size:18px;letter-spacing:-.01em}
+  .run-sub{font-size:13px;color:var(--ink-3);margin-top:2px}
+
+  /* HERO: the headline is the main info; the pill is a small confirmation */
+  .hero{margin:20px 0 4px}
+  .headline{font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.015em;max-width:34ch}
+
+  /* Illustrated pipeline spine — you SEE where it broke */
+  .spine-wrap{margin:22px 0 8px}
+  .spine-lab{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);margin-bottom:12px}
+  .spine{display:flex;align-items:stretch;gap:0}
+  .stage{flex:1;text-align:center;position:relative;padding-top:26px}
+  .stage:not(:last-child)::after{content:"";position:absolute;top:11px;left:50%;width:100%;height:2px;background:var(--border)}
+  .stage.done:not(:last-child)::after{background:var(--success)}
+  .dot{position:absolute;top:3px;left:50%;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;
+       background:var(--bg);border:2px solid var(--border);display:grid;place-items:center;z-index:1}
+  .dot svg{width:11px;height:11px}
+  .stage.done .dot{border-color:var(--success);color:var(--success)}
+  .stage.fail .dot{border-color:var(--danger);background:var(--danger);color:#fff;width:22px;height:22px;top:1px}
+  .stage.todo .dot{border-style:dashed}
+  .stage .nm{font-size:11.5px;color:var(--ink-3);margin-top:6px;line-height:1.25}
+  .stage.fail .nm{color:var(--danger-text);font-weight:700}
+
+  /* AI cause line — teal sparkle (native Seqera AI cue) */
+  .ai{display:flex;gap:10px;align-items:flex-start;background:var(--brand-soft);
+      border-left:3px solid var(--brand);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:14px 16px;margin:20px 0}
+  .ai .spark{flex:none;color:var(--brand);margin-top:2px}.ai .spark svg{width:16px;height:16px}
+  .ai .t{font-size:14.5px}.ai .t b{font-weight:700}
+  .ai .lab{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-text);
+           border:1px solid var(--brand);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:middle}
+  .ai .hedge{color:var(--ink-2)}
+
+  /* WHAT NEXT — first-class, actionable, framed as suggestions */
+  .next{border:1px solid var(--border);border-radius:var(--r-md);padding:16px 18px;margin:18px 0}
+  .next h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+  .next h3 svg{width:14px;height:14px;color:var(--primary-text)}
+  .step{display:flex;gap:11px;align-items:flex-start;padding:8px 0}
+  .step+.step{border-top:1px solid var(--border)}
+  .step .num{flex:none;width:20px;height:20px;border-radius:50%;background:var(--surface-sunk);color:var(--ink-2);
+             font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+  .step .s-t{font-size:14px}.step .s-t b{font-weight:600}
+  .step .s-d{font-size:12.5px;color:var(--ink-3)}
+  .step .go{margin-left:auto;flex:none;font-size:12px;font-weight:600;color:var(--primary-text);
+            border:1px solid var(--border);border-radius:var(--r-sm);padding:5px 10px;background:var(--bg);cursor:pointer;white-space:nowrap}
+  .step .go:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+  /* doors */
+  .doors{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+  .door{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--bg);
+        border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;cursor:pointer;font:inherit;color:inherit;transition:.15s}
+  .door:hover{border-color:var(--brand);background:var(--surface)}
+  .door:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .door .ic{flex:none;width:28px;height:28px;border-radius:7px;background:var(--surface-sunk);color:var(--ink-2);display:grid;place-items:center}
+  .door .ic svg{width:15px;height:15px}
+  .door .tx{flex:1;min-width:0}.door .tt{font-weight:600;font-size:14px}
+  .door .dd{font-size:12px;color:var(--ink-3);margin-top:1px}
+  .door .chev{color:var(--ink-3)}.door .chev svg{width:17px;height:17px}
+
+  /* donut */
+  .donut-wrap{display:flex;align-items:center;gap:16px}
+  .donut{--v:96}
+  .stat{display:flex;gap:22px;flex-wrap:wrap}
+  .stat .n{font-size:22px;font-weight:700}.stat .n small{display:block;font-size:12px;font-weight:600;color:var(--ink-3)}
+  .n.ok{color:var(--success-text)}.n.bad{color:var(--danger-text)}.n.ab{color:var(--muted-text)}
+
+  .tasklist{display:flex;flex-direction:column;gap:8px}
+  .trow{border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px}
+  .trow .l1{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+  .trow .st{padding:1px 8px;border-radius:999px;font-size:11px;border:1px solid currentColor}
+  .trow .st.failed{color:var(--danger-text)}.trow .st.aborted{color:var(--muted-text)}
+  .trow .l2{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:5px}
+  .raw pre{background:#170f26;color:#e7e3ef;font-family:var(--mono);font-size:12px;padding:14px;border-radius:var(--r-sm);white-space:pre-wrap;max-height:150px;overflow:auto}
+  .raw .c{font-size:13px;color:var(--ink-2);margin-top:12px}.raw .c b{color:var(--danger-text)}
+
+  /* full report = dense everything-at-once */
+  .report h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);margin:22px 0 10px}
+  .report h4:first-child{margin-top:0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 22px}
+  .kv .k{font-size:12px;color:var(--ink-3)}.kv .v{font-size:14px;font-weight:600}
+  .cards{display:flex;gap:12px;flex-wrap:wrap}
+  .card{flex:1;min-width:120px;border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px}
+  .card .cv{font-size:19px;font-weight:700}.card .cl{font-size:12px;color:var(--ink-3)}
+  @media (prefers-reduced-motion:reduce){.view{transition:none!important}}
+</style>
+</head>
+<body>
+  <div class="cap">FailurePanel v3 &nbsp;·&nbsp; <span>full-size · leads with what happened + a visual + what next · doors go deeper · "Complete results" = everything on one page. Click through.</span></div>
+
+  <div class="panel" id="panel">
+    <!-- ===================== SUMMARY (root) ===================== -->
+    <section class="view active" id="v-root" tabindex="-1" aria-label="Failed run">
+      <div class="vhead"><span class="vtitle">Run detail</span></div>
+      <div class="vbody">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+          <div><div class="run-name">viralrecon · community-showcase</div>
+            <div class="run-sub">nf-core/viralrecon 2.6.0 · adamtalbot · Jun 26 · ran 7m 11s · $0.014</div></div>
+          <span class="pill" aria-label="Status: Failed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>Failed</span>
+        </div>
+
+        <div class="hero"><div class="headline">The run got almost to the end, then the assembly step stopped.</div></div>
+
+        <!-- Illustrated spine: green = done, red = broke, dashed = never reached -->
+        <div class="spine-wrap">
+          <div class="spine-lab">Where it broke</div>
+          <div class="spine">
+            <div class="stage done"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div class="nm">Input<br>& QC</div></div>
+            <div class="stage done"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div class="nm">Classify</div></div>
+            <div class="stage done"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div class="nm">Variants</div></div>
+            <div class="stage done"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 7"/></svg></span><div class="nm">Consensus</div></div>
+            <div class="stage fail"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span><div class="nm">Assembly</div></div>
+            <div class="stage todo"><span class="dot"></span><div class="nm">Report</div></div>
+          </div>
+        </div>
+
+        <div class="ai">
+          <span class="spark"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.1L19 9l-5.1 1.9L12 16l-1.9-5.1L5 9l5.1-1.9z"/></svg></span>
+          <div class="t"><b>UNICYCLER</b> (assembly) was killed — exit 143 — and gave up after one retry.
+            <span class="hedge">Most likely out of memory or a reclaimed spot machine.</span>
+            <span class="lab">AI · illustrative</span></div>
+        </div>
+
+        <div class="next">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>What next</h3>
+          <div class="step"><span class="num">1</span>
+            <div><div class="s-t"><b>Rerun from the failed step with more memory.</b></div>
+              <div class="s-d">77 steps already succeeded — no need to start over.</div></div>
+            <button class="go">Rerun →</button></div>
+          <div class="step"><span class="num">2</span>
+            <div><div class="s-t"><b>Or switch that step off spot instances.</b></div>
+              <div class="s-d">Exit 143 is often a reclaimed spot machine.</div></div></div>
+        </div>
+
+        <div class="doors">
+          <button class="door" data-to="v-ran"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/></svg></span>
+            <span class="tx"><span class="tt">What ran</span><span class="dd">The full task breakdown, visualized</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span></button>
+          <button class="door" data-to="v-raw"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M4 12h16M4 19h10"/></svg></span>
+            <span class="tx"><span class="tt">Raw platform error</span><span class="dd">The unedited message — often misleading</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span></button>
+          <button class="door" data-to="v-report"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h10l6 6v10H4z"/><path d="M14 4v6h6"/></svg></span>
+            <span class="tx"><span class="tt">Complete results</span><span class="dd">Everything about this run, on one page</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== WHAT RAN (visualized) ===================== -->
+    <section class="view" id="v-ran" tabindex="-1" hidden aria-label="What ran">
+      <div class="vhead"><button class="back" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>Back</button><span class="vtitle">What ran</span></div>
+      <div class="vbody">
+        <div class="donut-wrap">
+          <svg width="120" height="120" viewBox="0 0 42 42" aria-label="77 of 80 tasks succeeded">
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--danger-soft)" stroke-width="5"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--success)" stroke-width="5"
+                    stroke-dasharray="96 4" stroke-dashoffset="25" stroke-linecap="round"/>
+            <text x="21" y="20" text-anchor="middle" font-size="7" font-weight="700" fill="var(--ink)">96%</text>
+            <text x="21" y="27" text-anchor="middle" font-size="3.4" fill="var(--ink-3)">completed</text>
+          </svg>
+          <div class="stat">
+            <div class="n ok">77<small>succeeded</small></div>
+            <div class="n bad">1<small>failed</small></div>
+            <div class="n ab">2<small>aborted</small></div>
+          </div>
+        </div>
+        <p style="font-size:13.5px;color:var(--ink-2);margin:20px 0 4px">Nearly the whole pipeline
+          completed — the failure is isolated to the assembly step. The 3 tasks that stopped:</p>
+        <div class="tasklist" style="margin-top:12px">
+          <div class="trow"><div class="l1"><span class="st failed">Failed</span> UNICYCLER · exit 143 · retried</div><div class="l2">…ASSEMBLY_UNICYCLER:UNICYCLER (task 38)</div></div>
+          <div class="trow"><div class="l1"><span class="st aborted">Aborted</span> UNICYCLER · no exit recorded</div><div class="l2">…ASSEMBLY_UNICYCLER:UNICYCLER (task 37)</div></div>
+          <div class="trow"><div class="l1"><span class="st aborted">Aborted</span> UNICYCLER · no exit recorded</div><div class="l2">…ASSEMBLY_UNICYCLER:UNICYCLER (task 42)</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== RAW ERROR ===================== -->
+    <section class="view" id="v-raw" tabindex="-1" hidden aria-label="Raw platform error">
+      <div class="vhead"><button class="back" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>Back</button><span class="vtitle">Raw platform error</span></div>
+      <div class="vbody raw">
+        <pre>*******************************************************
+* ABACAS: Algorithm Based Automatic Contiguation of   *
+* Assembled Sequences                                 *
+*                                                     *
+*  </pre>
+        <div class="c">Truncated at 255 characters by the platform. It names <b>ABACAS</b> — a sibling
+          assembly tool — while the task that actually failed is <b>UNICYCLER</b>. Either way,
+          the raw text can't tell you the reason; the task rows can. That's why the panel doesn't lead with it.</div>
+      </div>
+    </section>
+
+    <!-- ===================== COMPLETE RESULTS = full one-page report ===================== -->
+    <section class="view" id="v-report" tabindex="-1" hidden aria-label="Complete results">
+      <div class="vhead"><button class="back" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>Back</button><span class="vtitle">Complete results — everything on one page</span></div>
+      <div class="vbody report">
+        <div class="cards">
+          <div class="card"><div class="cv">7m 11s</div><div class="cl">Duration</div></div>
+          <div class="card"><div class="cv">$0.014</div><div class="cl">Cost</div></div>
+          <div class="card"><div class="cv">61%</div><div class="cl">CPU efficiency</div></div>
+          <div class="card"><div class="cv">72 GB</div><div class="cl">Peak memory</div></div>
+        </div>
+        <h4>Run</h4>
+        <div class="grid">
+          <div class="kv"><div class="k">Pipeline</div><div class="v">nf-core/viralrecon 2.6.0</div></div>
+          <div class="kv"><div class="k">Compute</div><div class="v">AWS Batch (eu-west-1)</div></div>
+          <div class="kv"><div class="k">Submitted → Completed</div><div class="v">Jun 26, 12:58 → 13:07</div></div>
+          <div class="kv"><div class="k">User</div><div class="v">adamtalbot</div></div>
+        </div>
+        <h4>Tasks</h4>
+        <div class="grid">
+          <div class="kv"><div class="k">Succeeded</div><div class="v" style="color:var(--success-text)">77</div></div>
+          <div class="kv"><div class="k">Failed / aborted</div><div class="v" style="color:var(--danger-text)">1 / 2</div></div>
+        </div>
+        <h4>Outputs</h4>
+        <p style="font-size:13.5px;color:var(--ink-3)">Result files, execution logs, and the MultiQC
+          report would render here — the dense, scroll-everything view for when you want it all.</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const panel=document.getElementById('panel'), stack=['v-root'];
+    const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+    function push(id){const cur=document.getElementById(stack[stack.length-1]),next=document.getElementById(id);
+      next.hidden=false;next.classList.add('enter-right');
+      requestAnimationFrame(()=>{next.classList.remove('enter-right');next.classList.add('active');
+        cur.classList.remove('active');cur.classList.add('enter-left');next.focus({preventScroll:true});
+        setTimeout(()=>{cur.hidden=true;cur.classList.remove('enter-left');},reduce?0:300);});stack.push(id);}
+    function pop(){if(stack.length<2)return;const cur=document.getElementById(stack.pop()),prev=document.getElementById(stack[stack.length-1]);
+      prev.hidden=false;prev.classList.add('enter-left');
+      requestAnimationFrame(()=>{prev.classList.remove('enter-left');prev.classList.add('active');
+        cur.classList.remove('active');cur.classList.add('enter-right');prev.focus({preventScroll:true});
+        setTimeout(()=>{cur.hidden=true;cur.classList.remove('enter-right');},reduce?0:300);});}
+    panel.addEventListener('click',e=>{const d=e.target.closest('[data-to]'),b=e.target.closest('[data-back]');
+      if(d)push(d.dataset.to);else if(b)pop();});
+  </script>
+</body>
+</html>
