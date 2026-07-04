@@ -1,7 +1,5 @@
 # Pipeline Run Status Dashboard
 
-**Live demo → https://assignment-isadora.vercel.app/**
-
 A redesign of the run-monitoring experience for a bioinformatics workflow platform, built
 around one idea: **progressive disclosure**. Instead of dropping you into a wall of tabs, it
 reads the situation first, then lets you drill exactly as deep as you want.
@@ -25,6 +23,11 @@ npm run preview    # preview the production build
 ```
 
 Requires Node 18+ (developed on Node 22).
+
+## Live Demo
+
+**Live demo → https://assignment-isadora.vercel.app/**
+
 
 ![Overview — run health at a glance](images/overview.png)
 
