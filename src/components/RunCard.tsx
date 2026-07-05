@@ -1,8 +1,10 @@
 import { Clock, DollarSign, CheckCircle2, XCircle } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
+import { Spine } from "./viz/Spine";
 import type { Run } from "@/lib/types";
 import { getStatusVisual } from "@/lib/status";
 import { describePipeline } from "@/lib/descriptions";
+import { derivePhases } from "@/lib/phases";
 import { formatCost, formatDuration, taskRatio } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +27,11 @@ export function RunCard({ run, onOpen }: RunCardProps) {
   // The button's aria-label is its whole accessible name (it overrides inner text),
   // so fold in status — the primary at-a-glance signal a SR user would otherwise miss.
   const statusLabel = getStatusVisual(run.status).label;
+
+  // The road this run travelled: a compact phase spine showing where it reached (or
+  // stopped). Runs that never executed (cancelled, died-on-arrival) derive [] → no
+  // spine, an honest "nothing ran". Its own slim line so metrics stay uncrowded.
+  const phases = derivePhases(run.tasks);
 
   return (
     <button
@@ -100,6 +107,14 @@ export function RunCard({ run, onOpen }: RunCardProps) {
           </div>
         </div>
       </div>
+
+      {/* The run's road, on its own line so it never crowds the metrics. Labels are
+          hidden until the row is hovered/focused (see Spine compact). */}
+      {phases.length > 0 && (
+        <div className="border-t border-border/60 pt-2.5">
+          <Spine phases={phases} compact />
+        </div>
+      )}
     </button>
   );
 }

@@ -5,11 +5,11 @@
  * cause + what next). Deeper detail lives behind doors. For runs that never executed
  * it shows an honest "nothing ran" state instead of a fabricated spine.
  */
-import { CircleDashed, FileText, ListChecks, Terminal } from "lucide-react";
+import { FileText, ListChecks, Terminal } from "lucide-react";
 import type { Run } from "@/lib/types";
 import { deriveFailureDiagnosis, deriveTaskBreakdown } from "@/lib/failure";
 import { derivePhases } from "@/lib/phases";
-import { Spine } from "@/components/viz/Spine";
+import { RunProgress } from "@/components/RunProgress";
 import { RunIdentity } from "./RunIdentity";
 import { AiInterpretation } from "./AiInterpretation";
 import { Door } from "./Door";
@@ -22,7 +22,6 @@ export function FailureSummary({ run }: FailureSummaryProps) {
   const diagnosis = deriveFailureDiagnosis(run);
   const phases = derivePhases(run.tasks);
   const breakdown = deriveTaskBreakdown(run);
-  const hasRan = phases.length > 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -34,30 +33,19 @@ export function FailureSummary({ run }: FailureSummaryProps) {
         {diagnosis.headline}
       </h2>
 
-      {hasRan ? (
-        <div>
-          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-text">
-            Where it broke
-          </p>
-          <Spine phases={phases} />
-        </div>
-      ) : (
-        // Honest "nothing ran" state — no spine, no donut. Never fabricate phases.
-        <div className="flex items-center gap-3 rounded-md border border-border bg-surface p-4">
-          <CircleDashed
-            className="h-5 w-5 shrink-0 text-muted-solid"
-            aria-hidden="true"
-          />
-          <p className="text-sm text-ink-2">
-            No tasks ran — there's no pipeline breakdown to show. The failure is
-            in the launch, not the science.
-          </p>
-        </div>
-      )}
+      {/* Where it got to — as progress. No tasks → an honest "nothing ran" line. */}
+      <RunProgress
+        phases={phases}
+        emptyNote="the failure is in the launch, not the science."
+      />
 
-      {/* AI-attributed region: cause + suggestions together, one marker, so no
-          interpretive content is left unlabelled. */}
-      <AiInterpretation cause={diagnosis.cause} steps={diagnosis.nextSteps} />
+      {/* AI-attributed region: likely source + cause + suggestions together, one
+          marker, so no interpretive content is left unlabelled. */}
+      <AiInterpretation
+        source={diagnosis.source}
+        cause={diagnosis.cause}
+        steps={diagnosis.nextSteps}
+      />
 
       <div className="flex flex-col gap-2">
         {/* "What ran" only appears when tasks actually ran — honesty over symmetry. */}

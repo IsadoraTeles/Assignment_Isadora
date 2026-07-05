@@ -15,7 +15,7 @@ import { derivePhases } from "@/lib/phases";
 import { FailureView } from "@/components/failure/FailureView";
 import { RunReport } from "@/components/failure/RunReport";
 import { RunIdentity } from "@/components/failure/RunIdentity";
-import { Spine } from "@/components/viz/Spine";
+import { RunProgress } from "@/components/RunProgress";
 
 interface RunDetailProps {
   run: Run | null;
@@ -70,10 +70,14 @@ export function RunDetail({
 
 /** Non-failed runs don't need the diagnostic drill — just the identity + full report. */
 function NonFailedDetail({ run }: { run: Run }) {
-  // Same phase spine as the failure view. A run with tasks shows where it ran (all
-  // green when it succeeded); a run with zero tasks derives [] → no spine, matching
-  // the honest "nothing ran" treatment (cancelled / died-on-arrival).
+  // Same phase progress as the failure view. A run with tasks shows how far it got
+  // (all green when it succeeded); a run with zero tasks (a cancelled run) derives
+  // [] → the honest "nothing ran" state, never a fabricated spine.
   const phases = derivePhases(run.tasks);
+  const emptyNote =
+    run.status === "CANCELLED"
+      ? "the run was cancelled before any task started."
+      : undefined;
 
   return (
     <div className="flex h-full flex-col">
@@ -83,14 +87,7 @@ function NonFailedDetail({ run }: { run: Run }) {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="flex flex-col gap-6">
           <RunIdentity run={run} />
-          {phases.length > 0 && (
-            <div>
-              <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-text">
-                Pipeline phases
-              </p>
-              <Spine phases={phases} />
-            </div>
-          )}
+          <RunProgress phases={phases} emptyNote={emptyNote} />
           <RunReport run={run} />
         </div>
       </div>

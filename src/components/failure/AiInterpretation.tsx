@@ -16,17 +16,23 @@
  */
 import { useId } from "react";
 import { Sparkles, Lightbulb } from "lucide-react";
-import type { NextStep } from "@/lib/failure";
+import type { FailureSource, NextStep } from "@/lib/failure";
 
 const AI_TOOLTIP =
   "AI-generated interpretation. 'Illustrative' = a hand-built stub in this prototype; a live model in production.";
 
 interface AiInterpretationProps {
+  /** Hedged "likely source" category — a scannable chip above the cause sentence. */
+  source: FailureSource | null;
   cause: { text: string; hedge: string } | null;
   steps: NextStep[];
 }
 
-export function AiInterpretation({ cause, steps }: AiInterpretationProps) {
+export function AiInterpretation({
+  source,
+  cause,
+  steps,
+}: AiInterpretationProps) {
   const tooltipId = useId();
 
   return (
@@ -61,9 +67,19 @@ export function AiInterpretation({ cause, steps }: AiInterpretationProps) {
 
       {cause && (
         <div>
-          <h3 className="mb-1 text-xs font-bold uppercase tracking-wide text-ai-text">
-            Likely cause
-          </h3>
+          {/* The likely SOURCE is a scannable category chip sitting ON the cause
+              heading — the "who" that the sentence below then explains. Kept as a
+              bare label (not a second sentence) so it never restates the cause. */}
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-ai-text">
+              Likely cause
+            </h3>
+            {source && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-ai-text/40 bg-white/50 px-2 py-0.5 text-[11px] font-semibold text-ai-text">
+                Source: {source}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-ink-2">
             <span className="font-semibold text-ink">{cause.text}</span>{" "}
             <span>{cause.hedge}</span>

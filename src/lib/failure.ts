@@ -21,10 +21,21 @@ export interface NextStep {
   action?: string;
 }
 
+/**
+ * A coarse taxonomy of where a failure most likely originated. Deliberately small
+ * and generic so it reads at a glance and never fingers a specific run — the label
+ * is inferred from signals (exit code, spot pricing, whether anything ran), so it
+ * always traces back to real fields.
+ */
+export type FailureSource =
+  "Infrastructure" | "Configuration or inputs" | "Pipeline / data" | "User";
+
 export interface FailureDiagnosis {
   archetype: FailureArchetype;
   /** Plain-language "what happened" — the hero of the summary view. */
   headline: string;
+  /** Hedged "likely source" category, or null when there's nothing to reason from. */
+  source: FailureSource | null;
   /** One-line AI cause: grounded claim + hedge. Null when nothing can be said. */
   cause: { text: string; hedge: string } | null;
   nextSteps: NextStep[];
@@ -101,6 +112,37 @@ export function recoveredRetryNote(run: Run): string | null {
   } first attempt and succeeded on retry — the run completed cleanly.`;
 }
 
+/**
+ * Infer the LIKELY SOURCE of a failure as a coarse CATEGORY only — the scannable
+ * "who", one level above the "Likely cause" sentence (which carries the grounded,
+ * hedged reasoning, so we deliberately don't repeat it here). Grounded in exit-code
+ * semantics (a code of 128 + N is a termination by signal N) plus whether any task
+ * ran, so the label always traces to a field:
+ *  - no tasks (died before execution)     → Configuration or inputs
+ *  - exit 143 (SIGTERM) / 137 (SIGKILL)   → Infrastructure (external / resource kill)
+ *  - exit 130 (SIGINT)                    → User (interrupted by hand)
+ *  - any other non-zero application exit  → Pipeline / data
+ * Null when there's no failing task to reason about.
+ */
+export function deriveFailureSource(run: Run): FailureSource | null {
+  const tasks = run.tasks ?? [];
+
+  // Died on arrival: nothing executed, so the failure is in launch/setup.
+  if (tasks.length === 0) return "Configuration or inputs";
+
+  const failingTask = tasks.find((t) => t.status === "FAILED");
+  if (!failingTask) return null;
+
+  const exit = failingTask.exit;
+  // 143 = 128 + SIGTERM(15), 137 = 128 + SIGKILL(9): killed from the OUTSIDE
+  // (reclamation, timeout, scheduler), not a crash in the pipeline code.
+  if (exit === 143 || exit === 137) return "Infrastructure";
+  // 130 = 128 + SIGINT(2): a keyboard interrupt — the classic "stopped by hand".
+  if (exit === 130) return "User";
+  // Any other non-zero exit came from the tool itself running on the data.
+  return "Pipeline / data";
+}
+
 /** Whole diagnosis, dispatched by archetype. */
 export function deriveFailureDiagnosis(run: Run): FailureDiagnosis {
   const tasks = run.tasks ?? [];
@@ -117,6 +159,7 @@ export function deriveFailureDiagnosis(run: Run): FailureDiagnosis {
         seconds != null
           ? `Failed ${seconds} seconds in — before any task started.`
           : "Failed before any task started.",
+      source: deriveFailureSource(run),
       cause: {
         text: "No tasks were recorded, so the run stopped during launch or setup, not inside the pipeline.",
         hedge: "Most likely a configuration, profile, or input-path error.",
@@ -221,6 +264,7 @@ export function deriveFailureDiagnosis(run: Run): FailureDiagnosis {
   return {
     archetype: "mid-run",
     headline,
+    source: deriveFailureSource(run),
     cause: { text: causeText, hedge },
     nextSteps,
     failingTask,

@@ -35,8 +35,10 @@ superseded by later ones (noted where it matters).
   - The mid-run FAILED run's `errorMessage` is about **ABACAS**, not UNICYCLER as the
     principles doc guessed. We render the raw field; nothing is hardcoded, so the doc's
     guess is irrelevant to the code.
-  - `errorMessage` on the on-arrival FAILED run is an **empty string `""`**, not `null` —
-    `FailurePanel` treats blank-or-null uniformly ("No error message was recorded").
+  - `errorMessage` is **null** on the on-arrival FAILED run (and the CANCELLED run);
+    `RawErrorView` treats blank-or-null uniformly ("No raw error was recorded"). _(An
+    earlier draft of this note said `""`; the field is actually `null` — see the
+    round-3 audit note near the end. Behaviourally identical.)_
   - `duration`, `start`, `exitStatus`, `load.cost`, `load.executors`,
     `stats.computeTimeFmt` are genuinely **null** on some runs. Every formatter returns
     an em-dash `—` for null rather than throwing or printing "null".
@@ -455,6 +457,59 @@ subtitle string, `fontWeight 700` + ink on band and row identifiers, the violet 
 (bg `rgb(245,243,255)`, border `rgb(124,58,237)`, marker `rgb(109,40,217)`, computed
 contrast 6.48:1) on **both** failures, and the focusable "See full run details" button —
 **zero console errors**.
+
+## Overview spine + progress reframe + likely-source tag (pre-freeze, round 3)
+
+Four surgical additions, then re-freeze. All reuse the existing `Spine` component +
+`lib/phases.ts`; nothing hardcoded per run; verified with the gates and a headless
+Chrome smoke pass (overview + all four detail archetypes, zero console errors).
+
+1. **Overview spine on the run rows.** Each row that has tasks now shows the road it
+   travelled — a **compact** `Spine` (new `compact` prop) on its own slim line under
+   the pipeline description, so it never crowds the metrics. Succeeded → full green
+   road; failed → green up to the break, red X at the stop phase. Runs that never
+   executed (cancelled `tender_shockley`, died-on-arrival `scruffy_colden`) derive
+   `[]` → **no spine** (honest "nothing ran"), confirmed on screen. Same status
+   roles/tokens as the detail spine (success/danger/muted) — no new colours.
+   - **Scannable:** phase labels are hidden by default and **reveal on row
+     hover/focus** (`group-hover` / `group-focus-visible`, keyed to the RunCard
+     button). Labels sit in normal flow but at `opacity-0`, so revealing them reflows
+     nothing. STATIC terminal state only — no "current/running" node is ever drawn.
+   - **a11y:** the compact spine is one `role="img"` with an **enumerated** aria-label
+     ("Prepare, Read QC, Classify, Alignment done; Assembly failed.") — state is
+     conveyed by check/X icons + colour, and the hover labels are also focus-reachable.
+     No horizontal overflow at 400 px (verified).
+2. **Detail spine reframed as run PROGRESS (both outcomes).** Extracted a shared
+   `RunProgress` component used by the failure view AND the non-failed detail: heading
+   **"Run progress"**, a summary line — **"N of N phases complete"** on a clean run,
+   **"M of N — stopped at <phase>"** on a failure — then the labelled `Spine`. A
+   no-task run renders the honest **"Nothing ran — …"** line (failure vs cancelled
+   get different trailing context) instead of a fabricated spine. This replaced the
+   old "Where it broke" (failure) and "Pipeline phases" (non-failed) headings with one
+   consistent treatment.
+3. **"Likely source" tag in the failure diagnosis.** New `deriveFailureSource()` in
+   `lib/failure.ts` (on `FailureDiagnosis.source`), rendered as a compact **category
+   chip ON the "Likely cause" heading** inside the **violet AI region** — the scannable
+   "who", one level above the cause sentence that explains it. It's a **bare label**
+   (no second sentence): an earlier draft gave the chip its own rationale, but that
+   restated the cause hedge almost verbatim ("exit 143 · external kill · spot ·
+   reclaimed"), so the rationale was dropped to remove the duplicate text. Derived
+   from real fields via exit-code semantics (a code of 128 + N is a termination by
+   signal N) and whether any task ran — **no per-run hardcoding**:
+   - **0 tasks** (pre-execution death) → **Configuration or inputs** (`scruffy_colden`).
+   - **exit 143 / 137** (SIGTERM / SIGKILL, external or resource kill) → **Infrastructure**
+     (`viralrecon` UNICYCLER, exit 143 — the cause sentence adds the spot-reclaim reading).
+   - **exit 130** (SIGINT) → **User** (interrupted by hand).
+   - any other non-zero application exit → **Pipeline / data**.
+     Only Infrastructure + Configuration appear in this dataset; the other two are
+     reachable by the same principled rules (no run happens to trigger them).
+4. **Data-faithfulness audit.** Went field-by-field through the 7 runs; every surfaced
+   number, the derived phases, the diagnosis, and the new source tag trace to real
+   fields, and nullable fields render as "—". Full pass/fail list in the README's
+   "Data-faithfulness audit" section. One doc-only correction: NOTES previously said
+   `scruffy_colden.errorMessage` is `""` — it's actually **`null`** (the code already
+   treats blank-or-null uniformly, so no UI change; `RawErrorView` renders the honest
+   "No raw error was recorded" state either way).
 
 ## Verify locally
 
