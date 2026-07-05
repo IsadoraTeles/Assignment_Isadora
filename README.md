@@ -8,7 +8,11 @@ exactly as deep as you want — and treats a *failed* run as a first-class, diag
 
 > **Health at a glance → a scannable runs list (each run shows its phase roadmap) → a
 > diagnostic failure view** for the runs that broke. Everything shown is reconstructed from the
-> real execution data.
+> real execution data — nothing is fabricated.
+
+**Stack:** Vite · React · TypeScript · Tailwind · shadcn/ui (Radix) · framer-motion.
+Visualizations are hand-rolled SVG. Styled with a token system **sampled from the product's own
+UI and tuned for WCAG AA**.
 
 > Overview — run health at a glance, with each run's phase roadmap
 
@@ -17,10 +21,6 @@ exactly as deep as you want — and treats a *failed* run as a first-class, diag
 > Diagnostic failure view — run progress, likely source, and the grounded cause…
 
 <p align="center"><img src="images/details.png" alt="Failure detail — run progress, likely source, and the grounded cause" width="300" /></p>
-
-**Stack:** Vite · React · TypeScript · Tailwind · shadcn/ui (Radix) · framer-motion.
-Visualizations are hand-rolled SVG. Styled with a token system **sampled from the product's own
-UI and tuned for WCAG AA**.
 
 ## Run it
 
@@ -48,7 +48,7 @@ interpretation for you and keeps the raw depth one click away. It's an addition,
 - **Inserts** an interpretation layer between clicking a run and the existing detail.
 - **Preserves** the platform's depth — *See full run details* opens the existing view, unchanged.
 
-## What the data taught me
+## What the data taught me (the reasoning starts here)
 
 The dataset is an **execution record, not the science** — timing, cost, task status; the real
 outputs live in cloud storage, referenced only by path. Every interaction and component choice
@@ -125,12 +125,20 @@ below follows from reading the data closely:
 
 ## What I'd build next (with more time / real data)
 
-- **Real-time runs** — the roadmap is built for it; with live telemetry it fills in as phases
-  complete. Not faked here because the dataset is entirely post-execution.
-- **Per-process resource charts** (`metrics[]`) and a **provenance panel** (copy the exact
-  command, link the commit, resume the session).
-- **Group-by-pipeline** at scale (the data layer already computes per-pipeline counts).
-- **Rerun-from-the-failed-step** as a real action, plus a concise ↔ full density toggle.
+The Run Summary *interprets*; the platform's existing detail *exhausts*. So next steps **deepen
+the interpretation** rather than rebuild raw-data panels:
+
+- **Real-time runs** *(needs live data)* — the roadmap is built for it; with live telemetry it
+  fills in as phases complete. Not faked here because the dataset is entirely post-execution.
+- **Richer diagnosis** — more failure archetypes and a fuller source classification.
+- **Overview aggregate charts** (cost/duration across runs) and **group-by-pipeline** health
+  (the data layer already computes per-pipeline counts).
+- **A live-model AI summary** over the same structured fields, plus a **density toggle**.
+- **Rerun-from-the-failed-step** as a real action (the button is the affordance today).
+
+Deliberately *out of scope* for the summary — because it's the existing detail view's job, which
+this design **preserves and links to**: provenance/config/containers, per-process resource
+charts, and raw logs. The summary points to them; it doesn't rebuild them.
 
 ## Project layout
 
