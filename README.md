@@ -30,7 +30,7 @@ It's an addition, not a rewrite. The **Runs Overview replaces** the flat runs li
 Summary inserts** an interpretation layer between clicking a run and the existing detail. "See
 full run details" **preserves** the platform's eight tabs, unchanged, one click away.
 
-## What the data taught me (why the design looks like this)
+## What the data taught me
 The dataset is an **execution record, not the science** — timing, cost, task status; the real
 outputs live in cloud storage, referenced by path. Every choice below follows from it:
 - **The raw error is unreliable** — a truncated banner naming the *wrong* tool, and an exit
