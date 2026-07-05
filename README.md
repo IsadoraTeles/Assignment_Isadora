@@ -2,19 +2,21 @@
 
 **Live demo → https://assignment-isadora.vercel.app/**
 
-> Health at a glance → a scannable runs list → a diagnostic failure view…
-
-![Overview — run health at a glance, with each run's phase roadmap](images/overview.png)
-
-![Failure detail — run progress, likely source, and the grounded cause](images/details.png)
-
 A redesign of the run-monitoring experience for a bioinformatics workflow platform, built
 around one idea: **progressive disclosure**. It reads the situation first, then lets you drill
 exactly as deep as you want — and treats a *failed* run as a first-class, diagnostic experience.
 
 > **Health at a glance → a scannable runs list (each run shows its phase roadmap) → a
 > diagnostic failure view** for the runs that broke. Everything shown is reconstructed from the
-> real execution data — nothing is fabricated.
+> real execution data.
+
+> Overview — run health at a glance, with each run's phase roadmap
+
+<p align="center"><img src="images/overview.png" alt="Overview — run health at a glance, with each run's phase roadmap" width="400" /></p>
+
+> Diagnostic failure view — run progress, likely source, and the grounded cause…
+
+<p align="center"><img src="images/details.png" alt="Failure detail — run progress, likely source, and the grounded cause" width="300" /></p>
 
 **Stack:** Vite · React · TypeScript · Tailwind · shadcn/ui (Radix) · framer-motion.
 Visualizations are hand-rolled SVG. Styled with a token system **sampled from the product's own
@@ -46,7 +48,7 @@ interpretation for you and keeps the raw depth one click away. It's an addition,
 - **Inserts** an interpretation layer between clicking a run and the existing detail.
 - **Preserves** the platform's depth — *See full run details* opens the existing view, unchanged.
 
-## What the data taught me (the reasoning starts here)
+## What the data taught me
 
 The dataset is an **execution record, not the science** — timing, cost, task status; the real
 outputs live in cloud storage, referenced only by path. Every interaction and component choice
