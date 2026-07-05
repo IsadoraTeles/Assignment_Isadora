@@ -2,81 +2,145 @@
 
 **Live demo → https://assignment-isadora.vercel.app/**
 
-A run status dashboard built as **one slice, deep**: rather than touching every surface of the
-platform, I redesigned the **run-monitoring** experience — a Runs Overview and a Run Summary —
-with the **failed run as the centerpiece**. The organizing idea is **progressive disclosure**:
-read the situation first, drill down only as far as you want, and the platform's existing full
-detail stays one click away. Everything shown is reconstructed from the real execution data —
-nothing is fabricated.
+This is a run status dashboard, built as **one slice, done deeply**. Rather than touching every
+part of the platform, I redesigned a single experience — **run monitoring** — properly: a Runs
+Overview and a Run Summary, with the **failed run treated as the centerpiece**. The whole thing
+is organized around one idea, **progressive disclosure**: you read the situation first, then
+drill down only as far as you actually need, and the platform's existing full detail is always
+one click away. Everything on screen is reconstructed from the real execution data — nothing is
+invented.
 
-> Runs Overview — health at a glance, each run showing its phase roadmap
+> Runs Overview — run health at a glance, with each run's phase roadmap
 
 <p align="center"><img src="images/overview.png" alt="Overview — run health at a glance, with each run's phase roadmap" width="400" /></p>
 
-> Run Summary View — run progress, likely source, and the grounded cause…
+> Run Summary — run progress, likely source, and the grounded cause…
 
 <p align="center"><img src="images/details.png" alt="Failure detail — run progress, likely source, and the grounded cause" width="300" /></p>
 
-## Run it
+## How to run it
+
 ```bash
 npm install
-npm run dev        # open the printed URL (default http://localhost:5173)
-npm run build      # type-check + production build
+npm run dev        # then open the printed URL (default http://localhost:5173)
+npm run build      # runs the type-check and the production build
 ```
-Requires Node 18+ (developed on Node 22).
 
-## How it fits: replace · insert · preserve
-It's an addition, not a rewrite. The **Runs Overview replaces** the flat runs list. The **Run
-Summary inserts** an interpretation layer between clicking a run and the existing detail. "See
-full run details" **preserves** the platform's eight tabs, unchanged, one click away.
+Requires Node 18 or newer (developed on Node 22).
 
-## What the data taught me
-The dataset is an **execution record, not the science** — timing, cost, task status; the real
-outputs live in cloud storage, referenced by path. Every choice below follows from it:
-- **The raw error is unreliable** — a truncated banner naming the *wrong* tool, and an exit
-  status of `0` on a failed run. So the Run Summary **reconstructs** the cause from task signals.
-- **Run status ≠ task status** — a succeeded run can hold a task that failed and recovered on
-  retry; surfaced plainly, not alarmingly.
-- **Two failure archetypes** — mid-run (a step killed) vs died-on-arrival (~8s, nothing ran);
-  a run that never executed shows an honest "nothing ran," not a fake chart.
-- **`tasks[]` is truncated** → counts come from `stats`/`load`; rows are labelled as a sample.
-- **exit 143 = an external kill** (spot reclamation), not out-of-memory (137) — the tasks ran
-  on spot, confirmed in the data — so the diagnosis and "Likely source" tag reflect that.
+## How it fits into the existing product
 
-## Interaction choices, and why
-Progressive disclosure (one idea per view, always a way back); lead with meaning, not status;
-the **phase roadmap** shows where a run got to (overview) and its progress (summary) from one
-shared component; failure is first-class — *where* it broke, *whose fault* (a hedged "Likely
-source" tag), *why*, and *what next*. **AI, honestly:** interpretive content sits in one violet,
-"illustrative"-labelled region; deterministic content (summary, counts, progress) is computed
-and unlabelled — two trust models.
+This is an addition to the current experience, not a rewrite of it:
 
-## Component & code choices, and why
-A **data layer** (`lib/`, no JSX: types from the *real* data, `phases.ts`, `failure.ts`,
-`overview.ts`) is isolated from **presentation** (`components/`: `ui/`, hand-rolled `viz/`,
-the `failure/` drill-stack) — because the interpretation logic is the interesting, most-likely-
-to-move part. One roadmap component serves both screens so they can't drift. No `any`; the three
-UI states (loading, empty, failed) are real code paths.
+- **Replace** — the Runs Overview takes the place of today's flat runs list, but adds a health
+  summary, cost, task ratios, plain-language descriptions, filtering and sorting, and a phase
+  roadmap for each run.
+- **Insert** — the Run Summary is a new step *between* clicking a run and the platform's existing
+  detail. It interprets what happened before you reach the raw data.
+- **Preserve** — "See full run details" opens the platform's existing eight-tab view, completely
+  unchanged. The deep detail experts rely on is still there, one click away.
 
-## Tradeoffs
-- **Interpretation depth over exhaustive provenance** — the Run Summary interprets; the raw
-  detail (provenance, per-process metrics, logs) stays the existing detail view's job, linked to.
-- **A focused slice over broad coverage** — the scope the brief rewards.
-- **Hand-rolled visuals over a chart library** — native feel, lean bundle.
-- **Honesty over demo flash** — no faked real-time, no recreated results report; the dataset is
-  post-execution and holds no scientific outputs.
+## What the data taught me (and why the design looks the way it does)
+
+The most important thing to understand about the dataset is that it's an **execution record, not
+the scientific results**. It tells you how each run *behaved* — timing, cost, which steps ran and
+whether they succeeded — but not what the pipeline actually produced. Those outputs live in cloud
+storage and are only referenced by a path. Every design decision below follows from reading the
+data closely:
+
+- **The raw error message is unreliable.** On the main failed run, it's a truncated banner that
+  names the *wrong* tool, and the run's own exit status reads `0` even though it failed. So instead
+  of showing that message, the Run Summary **reconstructs** what happened from the task-level
+  signals, which are trustworthy.
+- **A run's status and its tasks' statuses are not the same thing.** A run can succeed overall
+  while one of its tasks failed and then recovered on a retry. I surface that plainly ("one task
+  failed and recovered") so it's neither hidden nor alarming.
+- **There are two very different kinds of failure.** One died *mid-run* (a step was killed after
+  many others had succeeded); the other died *on arrival* (about eight seconds in, before any task
+  ran). They need different explanations, so a run that never really started shows an honest
+  "nothing ran" rather than an empty chart.
+- **The task list in the data is truncated,** so the reliable counts come from the summary fields
+  (`stats` and `load`), and any partial list of task rows is labelled as a sample.
+- **Exit code 143 means the task was killed from the outside** — most likely a reclaimed spot
+  machine — not that it ran out of memory (that would be code 137). The data confirms these tasks
+  ran on spot instances, so the diagnosis and the "Likely source" tag say *Infrastructure*, and
+  the suggested fixes are ordered accordingly.
+
+## Interaction choices, and the reasoning behind them
+
+- **Progressive disclosure throughout.** Each view shows one idea at a time, you open a "door" to
+  go deeper, and there's always a way back. The overview is for *triage* ("which runs need me?");
+  the Run Summary is for *understanding one run*.
+- **Lead with meaning, not status.** A failed run opens with a plain-language headline of what
+  happened, not just a red "Failed" badge — you already know it failed; the useful thing is *why*.
+- **The phase roadmap.** A small visualization shows the road each run travelled and where it
+  stopped. It's the same component in two places — a compact version on each overview row, and a
+  fuller "run progress" version in the summary — so the two can never disagree.
+- **Failure is treated as a first-class diagnosis.** The summary answers four questions in order:
+  *where* it broke (the roadmap), *whose fault* it likely was (a hedged "Likely source" tag),
+  *why* (a grounded explanation), and *what to do next* (concrete suggestions you choose from).
+- **AI is used honestly, with two levels of trust made visible.** The interpretive parts (the
+  likely source, cause, and suggestions) sit together in one violet region clearly marked
+  "illustrative" — a hand-built stand-in for what a live model would produce. The factual parts
+  (the summary line, the counts, the progress) are computed directly from the data and carry no AI
+  label, because they're always correct.
+
+## Component and code choices, and the reasoning behind them
+
+- **A clear split between logic and rendering.** All the code that *decides what to show* — reading
+  the data, deriving the roadmap, building the diagnosis, computing the summary — lives in a data
+  layer (`lib/`) with no UI in it. The React components only *render* what that layer produced. I
+  kept them separate because the interpretation logic is the interesting part, the most likely to
+  change, and the most likely to move to a server later, so it's easier to reason about and test on
+  its own.
+- **One roadmap component, used in both screens,** so the overview and the summary can never drift
+  apart.
+- **Visualizations are hand-drawn in SVG** (the donut, the gauges, the roadmap) rather than pulled
+  from a charting library — so they match the product's look, stay lightweight, and each shows
+  exactly one thing.
+- **The three UI states are real.** Loading (a skeleton while data loads), empty (when a filter
+  matches nothing), and failed (the diagnosis) are all actual code paths, not mock-ups. Types are
+  derived from the real data shape, and there's no use of `any`.
+
+## Tradeoffs I made
+
+- **Depth of interpretation over exhaustive raw detail.** The Run Summary explains; the platform's
+  existing detail view holds the exhaustive data (full provenance, per-process metrics, raw logs).
+  I link out to it rather than rebuilding it — the summary's job is to *interpret*, not to duplicate.
+- **A focused slice over broad coverage.** One experience built well, rather than many built
+  shallowly — which is the scoping the brief asks for.
+- **Hand-built visuals over a charting library** — more work up front, but a native feel and a
+  lighter result.
+- **Honesty over demo polish.** I didn't fake a real-time view or recreate the results report,
+  because this dataset is entirely after-the-fact and contains no live data or scientific outputs.
+  A flashier demo would have been dishonest about what the data supports.
 
 ## What I'd build next
-Deepen the *interpretation* (same data): richer diagnosis, overview aggregate charts, group-by-
-pipeline, a live-model AI summary, "Rerun" as a real action. With *more* data: **real-time runs**
-— the roadmap is built to fill in live. Left to the existing detail (not rebuilt): provenance,
-per-process charts, raw logs.
+
+The Run Summary interprets, so its natural next steps *deepen the interpretation* rather than add
+raw-data panels:
+
+- **With the same data:** a richer diagnosis and fuller source classification; aggregate charts on
+  the overview (cost and duration across runs); grouping runs by pipeline; a real AI model behind
+  the summary; a toggle between a concise and a fuller view; and turning the "Rerun" button into a
+  real action.
+- **With more data:** **real-time runs** — the roadmap is already built to fill in live as a run
+  progresses; it just needs live telemetry, which this dataset doesn't have.
+- **Deliberately left to the existing detail view** (I preserve and link to it, rather than
+  rebuilding it): provenance, per-process resource charts, and raw logs.
 
 ## Accessibility
-Audited against the running app (axe · keyboard · contrast), not just reviewed. Keyboard-
-complete; focus moves into a run on open and returns to its row on close; status is icon + text
-+ colour; the roadmap carries a spoken aria-label; `prefers-reduced-motion` honoured.
 
-## Docs
-- **DESIGN-DIRECTIONS.md** — design principles · **ai-interaction-principles.md** — how the AI
-  behaves · **NOTES.md** — decision log and the data-faithfulness audit.
+I treated accessibility as a design constraint from the start and audited it against the running
+app — with an automated scanner (axe), a full keyboard pass, and a colour-contrast check — rather
+than just reviewing the code. The whole app is keyboard-operable; when you open a run, focus moves
+into the panel, and when you close it, focus returns to the row you opened. Status is always shown
+with an icon and text as well as colour (never colour alone), the phase roadmap carries a spoken
+description for screen readers, and motion is disabled for anyone who prefers reduced motion.
+
+## Documents in this repo
+
+- **DESIGN-DIRECTIONS.md** — the design principles the whole thing follows.
+- **ai-interaction-principles.md** — how the AI behaves and why.
+- **NOTES.md** — a running decision log, plus the field-by-field check that every number in the UI
+  traces back to the real data.
